@@ -1,18 +1,48 @@
 <?php
 session_start();
+require_once "includes/db.php";
 
-if (!isset($_SESSION['user_id']) || !isset($_SESSION['score'])) {
+// If user not logged in, redirect to login
+if (!isset($_SESSION['user_id'])) {
     header("Location: login.php");
     exit;
 }
 
-$total_questions = count($_SESSION['questions']);
-$score = $_SESSION['score'];
+// If no answers submitted, redirect to dashboard
+if ($_SERVER['REQUEST_METHOD'] != 'POST' || !isset($_POST['answers'])) {
+    header("Location: dashboard.php");
+    exit;
+}
 
-// Clear quiz session data
-unset($_SESSION['questions']);
-unset($_SESSION['question_index']);
-unset($_SESSION['score']);
+$answers = $_POST['answers'];
+$score = 0;
+$total = count($answers);
+
+// Fetch all questions and correct answers
+$question_ids = array_keys($answers);
+$placeholders = implode(',', array_fill(0, count($question_ids), '?'));
+$stmt = $conn->prepare("SELECT id, correct_option FROM questions WHERE id IN ($placeholders)");
+
+$types = str_repeat('i', count($question_ids));
+$stmt->bind_param($types, ...$question_ids);
+$stmt->execute();
+$result = $stmt->get_result();
+
+$correct_answers = [];
+while ($row = $result->fetch_assoc()) {
+    $correct_answers[$row['id']] = $row['correct_option'];
+}
+
+// Calculate score
+foreach ($answers as $qid => $user_ans) {
+    $user_ans = strtolower(trim($user_ans)); // normalize input
+    $correct = strtolower(trim($correct_answers[$qid]));
+
+    if ($user_ans === $correct) {
+        $score++;
+    }
+}
+
 ?>
 
 <!DOCTYPE html>
@@ -23,41 +53,13 @@ unset($_SESSION['score']);
 </head>
 <body class="bg-light">
 
-<!-- Navbar -->
-<nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm">
-    <div class="container-fluid px-4">
-        <a class="navbar-brand" href="#">🚀 Quiz App</a>
-        <div class="d-flex align-items-center ms-auto">
-            <span class="text-white me-3">🎉 <?php echo htmlspecialchars($_SESSION['username']); ?></span>
-            <a href="logout.php" class="btn btn-light btn-sm">Logout</a>
-        </div>
-    </div>
-</nav>
-
-<!-- Result Card -->
-<div class="container mt-5">
-    <div class="card text-center shadow-lg p-4">
-        <div class="card-body">
-            <h2 class="mb-3">🎓 Quiz Completed!</h2>
-            <p class="fs-5">You scored <strong><?php echo $score; ?></strong> out of <strong><?php echo $total_questions; ?></strong></p>
-
-            <?php if ($score == $total_questions): ?>
-                <p class="text-success fw-bold">Perfect score! 🏆</p>
-            <?php elseif ($score >= ($total_questions / 2)): ?>
-                <p class="text-primary">Nice job! You're getting there 👏</p>
-            <?php else: ?>
-                <p class="text-danger">Keep practicing, you’ll get it! 💪</p>
-            <?php endif; ?>
-
-            <div class="mt-4">
-                <a href="start-quiz.php" class="btn btn-outline-success me-2">Retake Quiz</a>
-                <a href="dashboard.php" class="btn btn-primary">Back to Dashboard</a>
-            </div>
-        </div>
+<div class="container mt-5 text-center">
+    <div class="card shadow p-4">
+        <h2 class="mb-4">🎉 Quiz Completed!</h2>
+        <p class="lead">You scored <strong><?= $score ?></strong> out of <strong><?= $total ?></strong>.</p>
+        <a href="dashboard.php" class="btn btn-primary mt-3">Back to Dashboard</a>
     </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
-

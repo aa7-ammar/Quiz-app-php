@@ -1,38 +1,42 @@
+
 <?php
 session_start();
-require_once 'includes/db.php';
-
-$message = '';
+require_once "includes/db.php";
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    $username = trim($_POST['username']);
+    $username = $_POST['username'];
     $password = $_POST['password'];
 
-    // Fetch user from DB
-    $stmt = $conn->prepare("SELECT id, password FROM users WHERE username = ?");
+    // echo "POST received.<br>";
+    // echo "Username: $username<br>";
+
+    $stmt = $conn->prepare("SELECT * FROM users WHERE username = ?");
     $stmt->bind_param("s", $username);
     $stmt->execute();
-    $stmt->store_result();
+    $res = $stmt->get_result();
+    $user = $res->fetch_assoc();
 
-    if ($stmt->num_rows == 1) {
-        $stmt->bind_result($user_id, $hashed_password);
-        $stmt->fetch();
+    if ($user) {
+        echo "User found: " . $user['username'] . "<br>";
+        echo "Verifying password...<br>";
 
-        if (password_verify($password, $hashed_password)) {
-            $_SESSION['user_id'] = $user_id;
-            $_SESSION['username'] = $username;
+        if ($user && $password === $user['password']) {
+
+            $_SESSION['user_id'] = $user['id'];
+            $_SESSION['username'] = $user['username'];
             header("Location: dashboard.php");
-            exit;
-        } else {
-            $message = "Invalid password.";
+            exit();
+        }
+         else {
+            echo "❌ Password is incorrect.<br>";
         }
     } else {
-        $message = "User not found.";
+        echo "❌ No such user found.<br>";
     }
-
-    $stmt->close();
 }
+
 ?>
+
 
 <!DOCTYPE html>
 <html>
@@ -65,7 +69,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     </form>
                     
                     <div class="text-center mt-3">
-                        <a href="register.php">Don't have an account? Register</a>
+                        <a href="index.php">Don't have an account? Register</a>
                     </div>
                 </div>
             </div>

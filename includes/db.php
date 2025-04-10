@@ -1,10 +1,10 @@
 <?php
 // includes/db.php
 
-$host = 'localhost';
-$user = 'root';
-$password = 'gojo@satoru'; 
-$database = 'quiz_app';
+$host = 'sql209.infinityfree.com';
+$user = 'if0_38717227';
+$password = '5ucLXFooW1jG5'; 
+$database = 'if0_38717227_quiz';
 
 $conn = new mysqli($host, $user, $password, $database);
 
