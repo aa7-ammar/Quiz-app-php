@@ -24,7 +24,7 @@ if (!isset($_SESSION['username'])) {
 <!-- Navbar -->
 <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm">
     <div class="container-fluid px-4">
-        <a class="navbar-brand" href="#">🚀 Quiz App</a>
+        <a class="navbar-brand" href="#">🚀 Quzie!!</a>
 
         <div class="d-flex align-items-center ms-auto">
             <span class="text-white me-3">👋 Hello, <?php echo htmlspecialchars($_SESSION['username']); ?></span>
